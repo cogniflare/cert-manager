@@ -531,6 +531,9 @@ func (c *controller) storeCertificateOnStatus(ctx context.Context, o *cmacme.Ord
 	}
 
 	o.Status.Certificate = certBuffer.Bytes()
+	o.Status.CA = certBuffer.Bytes()
+	c.recorder.Event(o, corev1.EventTypeNormal, "Complete", "Order completed successfully")
+
 	c.recorder.Event(o, corev1.EventTypeNormal, "Complete", "Order completed successfully")
 
 	return nil

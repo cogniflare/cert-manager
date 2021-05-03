@@ -842,6 +842,11 @@ func (in *OrderStatus) DeepCopyInto(out *OrderStatus) {
 		*out = make([]byte, len(*in))
 		copy(*out, *in)
 	}
+	if in.CA != nil {
+		in, out := &in.CA, &out.CA
+		*out = make([]byte, len(*in))
+		copy(*out, *in)
+	}
 	if in.Authorizations != nil {
 		in, out := &in.Authorizations, &out.Authorizations
 		*out = make([]ACMEAuthorization, len(*in))

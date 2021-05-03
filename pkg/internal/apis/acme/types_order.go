@@ -93,6 +93,12 @@ type OrderStatus struct {
 	// 'valid' state.
 	Certificate []byte
 
+	// CA is a copy of the PEM encoded certificate for this Order's issuer.
+	// This field will be populated after the order has been successfully
+	// finalized with the ACME server, and the order has transitioned to the
+	// 'valid' state.
+	CA []byte
+
 	// State contains the current state of this Order resource.
 	// States 'success' and 'expired' are 'final'
 	State State

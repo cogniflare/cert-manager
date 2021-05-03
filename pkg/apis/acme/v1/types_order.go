@@ -110,6 +110,13 @@ type OrderStatus struct {
 	// +optional
 	Certificate []byte `json:"certificate,omitempty"`
 
+	// Certificate is a copy of the PEM encoded certificate for this Order.
+	// This field will be populated after the order has been successfully
+	// finalized with the ACME server, and the order has transitioned to the
+	// 'valid' state.
+	// +optional
+	CA []byte `json:"ca,omitempty"`
+
 	// State contains the current state of this Order resource.
 	// States 'success' and 'expired' are 'final'
 	// +optional
