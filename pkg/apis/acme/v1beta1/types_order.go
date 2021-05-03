@@ -109,6 +109,13 @@ type OrderStatus struct {
 	// +optional
 	Certificate []byte `json:"certificate,omitempty"`
 
+	// The PEM encoded x509 certificate of the signer, also known as the CA
+	// (Certificate Authority).
+	// This is set on a best-effort basis by different issuers.
+	// If not set, the CA is assumed to be unknown/not available.
+	// +optional
+	CA []byte `json:"ca,omitempty"`
+
 	// State contains the current state of this Order resource.
 	// States 'success' and 'expired' are 'final'
 	// +optional

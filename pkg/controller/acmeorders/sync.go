@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 
 	acmeapi "golang.org/x/crypto/acme"
@@ -516,6 +517,67 @@ func (c *controller) finalizeOrder(ctx context.Context, cl acmecl.Interface, o *
 	return c.storeCertificateOnStatus(ctx, o, certSlice)
 }
 
+// parsePEMBundle parses a certificate bundle from top to bottom and returns
+// a slice of x509 certificates. This function will error if no certificates are found.
+//
+// TODO: This was taken from lego directly, consider exporting it there, or
+// consolidating with other TF crypto functions.
+func parsePEMBundle(bundle []byte) ([]*x509.Certificate, error) {
+	var certificates []*x509.Certificate
+	var certDERBlock *pem.Block
+
+	for {
+		certDERBlock, bundle = pem.Decode(bundle)
+		if certDERBlock == nil {
+			break
+		}
+
+		if certDERBlock.Type == "CERTIFICATE" {
+			cert, err := x509.ParseCertificate(certDERBlock.Bytes)
+			if err != nil {
+				return nil, err
+			}
+			certificates = append(certificates, cert)
+		}
+	}
+
+	if len(certificates) == 0 {
+		return nil, errors.New("no certificates were found while parsing the bundle")
+	}
+
+	return certificates, nil
+}
+
+// splitPEMBundle gets a slice of x509 certificates from
+// parsePEMBundle.
+//
+// The first certificate split is returned as the issued certificate,
+// with the rest returned as the issuer (intermediate) chain.
+//
+// Technically, it will be possible for issuer to be empty, if there
+// are zero certificates in the intermediate chain. This is highly
+// unlikely, however.
+func splitPEMBundle(bundle []byte) (cert, issuer []byte, err error) {
+	cb, err := parsePEMBundle(bundle)
+	if err != nil {
+		return
+	}
+
+	// lego always returns the issued cert first, if the CA is first there is a problem
+	if cb[0].IsCA {
+		err = fmt.Errorf("First certificate is a CA certificate")
+		return
+	}
+
+	cert = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cb[0].Raw})
+	issuer = make([]byte, 0)
+	for _, ic := range cb[1:] {
+		issuer = append(issuer, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: ic.Raw})...)
+	}
+
+	return
+}
+
 func (c *controller) storeCertificateOnStatus(ctx context.Context, o *cmacme.Order, certs [][]byte) error {
 	log := logf.FromContext(ctx)
 	// encode the retrieved certificates (including the chain)
@@ -530,9 +592,14 @@ func (c *controller) storeCertificateOnStatus(ctx context.Context, o *cmacme.Ord
 		}
 	}
 
-	o.Status.Certificate = certBuffer.Bytes()
-	o.Status.CA = certBuffer.Bytes()
-	c.recorder.Event(o, corev1.EventTypeNormal, "Complete", "Order completed successfully")
+	var err error
+	o.Status.Certificate, o.Status.CA, err = splitPEMBundle(certBuffer.Bytes())
+	if err != nil {
+		log.Error(err, "could not split PEM bundle")
+		c.setOrderState(&o.Status, string(cmacme.Errored))
+		o.Status.Reason = fmt.Sprintf("Could not split PEM bundle: %v", err)
+		return nil
+	}
 
 	c.recorder.Event(o, corev1.EventTypeNormal, "Complete", "Order completed successfully")
 

@@ -1313,6 +1313,7 @@ func autoConvert_v1beta1_OrderStatus_To_acme_OrderStatus(in *v1beta1.OrderStatus
 	out.FinalizeURL = in.FinalizeURL
 	out.Authorizations = *(*[]acme.ACMEAuthorization)(unsafe.Pointer(&in.Authorizations))
 	out.Certificate = *(*[]byte)(unsafe.Pointer(&in.Certificate))
+	out.CA = *(*[]byte)(unsafe.Pointer(&in.CA))
 	out.State = acme.State(in.State)
 	out.Reason = in.Reason
 	out.FailureTime = (*apismetav1.Time)(unsafe.Pointer(in.FailureTime))
@@ -1328,6 +1329,7 @@ func autoConvert_acme_OrderStatus_To_v1beta1_OrderStatus(in *acme.OrderStatus, o
 	out.URL = in.URL
 	out.FinalizeURL = in.FinalizeURL
 	out.Certificate = *(*[]byte)(unsafe.Pointer(&in.Certificate))
+	out.CA = *(*[]byte)(unsafe.Pointer(&in.CA))
 	out.State = v1beta1.State(in.State)
 	out.Reason = in.Reason
 	out.Authorizations = *(*[]v1beta1.ACMEAuthorization)(unsafe.Pointer(&in.Authorizations))

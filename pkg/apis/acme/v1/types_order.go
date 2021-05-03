@@ -110,10 +110,10 @@ type OrderStatus struct {
 	// +optional
 	Certificate []byte `json:"certificate,omitempty"`
 
-	// Certificate is a copy of the PEM encoded certificate for this Order.
-	// This field will be populated after the order has been successfully
-	// finalized with the ACME server, and the order has transitioned to the
-	// 'valid' state.
+	// The PEM encoded x509 certificate of the signer, also known as the CA
+	// (Certificate Authority).
+	// This is set on a best-effort basis by different issuers.
+	// If not set, the CA is assumed to be unknown/not available.
 	// +optional
 	CA []byte `json:"ca,omitempty"`
 

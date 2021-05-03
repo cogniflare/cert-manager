@@ -200,6 +200,7 @@ func (a *ACME) Sign(ctx context.Context, cr *v1.CertificateRequest, issuer v1.Ge
 	// Order valid, return cert. The calling controller will update with ready if its happy with the cert.
 	return &issuerpkg.IssueResponse{
 		Certificate: order.Status.Certificate,
+		CA:          order.Status.CA,
 	}, nil
 
 }
